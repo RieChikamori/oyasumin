@@ -1,30 +1,45 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isWeb = Platform.OS === 'web';
+
+let Notifications: typeof import('expo-notifications') | null = null;
+
+async function getNotifications() {
+  if (isWeb) return null;
+  if (!Notifications) {
+    Notifications = await import('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  }
+  return Notifications;
+}
 
 export async function requestPermissions(): Promise<boolean> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
+  const mod = await getNotifications();
+  if (!mod) return false;
+
+  const { status: existing } = await mod.getPermissionsAsync();
   if (existing === 'granted') return true;
 
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } = await mod.requestPermissionsAsync();
   return status === 'granted';
 }
 
 export async function scheduleBedtimeReminder(targetTime: string) {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  const mod = await getNotifications();
+  if (!mod) return;
+
+  await mod.cancelAllScheduledNotificationsAsync();
 
   const [hours, minutes] = targetTime.split(':').map(Number);
 
-  // Notify 30 minutes before target
   let reminderHour = hours;
   let reminderMinute = minutes - 30;
   if (reminderMinute < 0) {
@@ -33,13 +48,13 @@ export async function scheduleBedtimeReminder(targetTime: string) {
     if (reminderHour < 0) reminderHour += 24;
   }
 
-  await Notifications.scheduleNotificationAsync({
+  await mod.scheduleNotificationAsync({
     content: {
       title: 'おやすみん',
       body: 'そろそろおやすみ準備の時間だよ',
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      type: mod.SchedulableTriggerInputTypes.DAILY,
       hour: reminderHour,
       minute: reminderMinute,
     },
@@ -47,5 +62,7 @@ export async function scheduleBedtimeReminder(targetTime: string) {
 }
 
 export async function cancelAll() {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  const mod = await getNotifications();
+  if (!mod) return;
+  await mod.cancelAllScheduledNotificationsAsync();
 }

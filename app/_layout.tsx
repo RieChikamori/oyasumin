@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useSettings } from '../hooks/useSettings';
 import { scheduleBedtimeReminder } from '../services/notifications';
 
-SplashScreen.preventAutoHideAsync();
+if (Platform.OS !== 'web') {
+  SplashScreen.preventAutoHideAsync();
+}
 
 export default function RootLayout() {
   const { settings, loading } = useSettings();
@@ -14,7 +17,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loading) return;
-    SplashScreen.hideAsync();
+    if (Platform.OS !== 'web') SplashScreen.hideAsync();
 
     const inOnboarding = segments[0] === 'onboarding';
 

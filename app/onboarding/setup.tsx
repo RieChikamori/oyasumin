@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -69,7 +70,9 @@ export default function SetupScreen() {
         </View>
 
         <Text style={styles.hint}>
-          就寝30分前にリマインダーを送るよ
+          {Platform.OS !== 'web'
+            ? '就寝30分前にリマインダーを送るよ'
+            : '目標時刻を設定しよう'}
         </Text>
       </ScrollView>
 
